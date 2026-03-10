@@ -35,6 +35,8 @@ npm start
 ```
 Visit `http://localhost:4000` to chat. All button clicks hit `/api/chat`, so the server must stay running.
 
+> On Render’s free plan the instance sleeps after a few idle minutes. The frontend now retries chat requests automatically, but expect the first click after a long pause to take a couple of seconds while the service wakes up.
+
 ## Customizing flows
 - Conversation logic lives in `backend/server.js` inside the `flows` object. Each entry can include:
   - `message`: string shown to the user.

@@ -42,7 +42,7 @@ function setButtons(options = []) {
   });
 }
 
-async function requestResponse(intent = 'initial') {
+async function requestResponse(intent = 'initial', attempt = 1) {
   try {
     const res = await fetch(API_ENDPOINT, {
       method: 'POST',
@@ -64,6 +64,12 @@ async function requestResponse(intent = 'initial') {
       showToast(data.toast);
     }
   } catch (err) {
+    if (attempt < 3) {
+      showToast('Warming up the assistant... retrying.');
+      await delay(1000 * attempt);
+      return requestResponse(intent, attempt + 1);
+    }
+    console.error('Chat request failed:', err);
     addMessage(err.message || 'Something went wrong. Restarting to keep things smooth.', 'bot');
     setButtons();
     showToast('We reset the flow so you can keep going.');
@@ -95,6 +101,10 @@ function restartConversation() {
   chatMessages.innerHTML = '';
   addMessage('Conversation restarted. Let us begin again.', 'bot');
   requestResponse('initial');
+}
+
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 primaryButtons.forEach(btn => {

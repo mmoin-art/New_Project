@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: taskflow-todo
+    name: accel-chatbot
     env: node
     plan: free
     rootDir: backend

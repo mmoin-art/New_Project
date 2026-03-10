@@ -37,6 +37,12 @@ A lightweight full-stack to-do list built with a zero-dependency Node.js backend
 
 > **Note:** the server writes to `backend/data/tasks.json`. Keep this file if you want to preserve your tasks; delete it to reset the list.
 
+## Deploying to Render
+1. Commit and push your changes to GitHub (already done for this repo).
+2. In the Render dashboard choose **New > Blueprint** and paste the repo URL. Render auto-detects `render.yaml` and provisions the service with the right build/start commands.
+3. Click **Apply** to create the web service. The included persistent disk mounts at `/data`, and the `DATA_FILE` env variable points the app to `/data/tasks.json` so your tasks survive restarts.
+4. On the first deploy Render installs dependencies in `backend`, runs `npm start`, and exposes the public URL shown in the dashboard. Later pushes to `main` trigger automatic redeploys.
+
 ## API overview
 | Method | Endpoint        | Description |
 | ------ | --------------- | ----------- |
@@ -53,6 +59,3 @@ Responses are JSON and include validation errors when fields are missing.
 - Extend the schema by adding new fields in `server.js` and updating the frontend form in `public/index.html` + `public/app.js`.
 
 Enjoy managing your tasks!
-=======
-# New_Project
->>>>>>> d9e135b5f49bd71cfd7f797eb662cf21086415f4

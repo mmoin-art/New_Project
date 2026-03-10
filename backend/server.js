@@ -6,7 +6,10 @@ const { URL } = require('url');
 
 const PORT = Number(process.env.PORT) || 4000;
 const HOST = process.env.HOST || '0.0.0.0';
-const DATA_FILE = path.join(__dirname, 'data', 'tasks.json');
+const DEFAULT_DATA_FILE = path.join(__dirname, 'data', 'tasks.json');
+const DATA_FILE = process.env.DATA_FILE
+  ? path.resolve(process.env.DATA_FILE)
+  : DEFAULT_DATA_FILE;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
 function ensureDataFile() {

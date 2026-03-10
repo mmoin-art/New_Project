@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: taskflow-todo
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: '18'
+      - key: DATA_FILE
+        value: /data/tasks.json
+    disk:
+      name: taskflow-data
+      mountPath: /data
+      sizeGB: 1

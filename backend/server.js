@@ -1,50 +1,126 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 const { URL } = require('url');
 
 const PORT = Number(process.env.PORT) || 4000;
 const HOST = process.env.HOST || '0.0.0.0';
-const DEFAULT_DATA_FILE = path.join(__dirname, 'data', 'tasks.json');
-const DATA_FILE = process.env.DATA_FILE
-  ? path.resolve(process.env.DATA_FILE)
-  : DEFAULT_DATA_FILE;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 
-function ensureDataFile() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-    fs.writeFileSync(DATA_FILE, '[]', 'utf-8');
+const flows = {
+  initial: {
+    message:
+      'Hi, I am the Accel Digital assistant. Ready to help you explore our capabilities, success stories, and next steps.',
+    options: [
+      { label: 'Get Started', intent: 'get_started' },
+      { label: 'Learn More', intent: 'learn_more' },
+      { label: 'Services', intent: 'services' },
+      { label: 'Contact Us', intent: 'contact' }
+    ]
+  },
+  get_started: {
+    message: 'Great! What would you like to focus on first?',
+    options: [
+      { label: 'Understand our approach', intent: 'learn_more' },
+      { label: 'Review services', intent: 'services' },
+      { label: 'Talk to a strategist', intent: 'contact' }
+    ]
+  },
+  learn_more: {
+    message:
+      'Accel Digital blends research, experience design, and engineering to launch bold digital initiatives fast. We partner with scale-ups and enterprises to remove friction from modern customer journeys.',
+    options: [
+      { label: 'View Services', intent: 'services' },
+      { label: 'See case studies', intent: 'case_studies' },
+      { label: 'Engage our team', intent: 'contact' }
+    ],
+    toast: 'Overview loaded — pick what to explore next.'
+  },
+  case_studies: {
+    message:
+      'Recent wins: 45% lift in qualified pipeline for a B2B SaaS leader, global commerce revamp for an athleisure brand, and a GenAI CX assistant rolled out in 6 weeks.',
+    options: [
+      { label: 'Growth stories', intent: 'service_growth' },
+      { label: 'Experience stories', intent: 'service_experience' },
+      { label: 'Back to start', intent: 'initial' }
+    ]
+  },
+  services: {
+    message: 'We orchestrate end-to-end value. Choose a capability to dive deeper.',
+    options: [
+      { label: 'Strategy & Research', intent: 'service_strategy' },
+      { label: 'Experience & Product', intent: 'service_experience' },
+      { label: 'Growth & GTM', intent: 'service_growth' },
+      { label: 'AI Acceleration', intent: 'service_ai' },
+      { label: 'Contact Us', intent: 'contact' }
+    ]
+  },
+  service_strategy: {
+    message:
+      'Strategy & Research: opportunity mapping, product-market validation, CX vision sprints, and operating model design to align stakeholders fast.',
+    options: [
+      { label: 'Experience Design', intent: 'service_experience' },
+      { label: 'Book a strategy call', intent: 'contact' },
+      { label: 'Back to services', intent: 'services' }
+    ]
+  },
+  service_experience: {
+    message:
+      'Experience & Product: full-stack product design, prototyping, accessibility audits, and platform builds guided by measurable outcomes.',
+    options: [
+      { label: 'Growth Programs', intent: 'service_growth' },
+      { label: 'AI Accelerators', intent: 'service_ai' },
+      { label: 'Back to services', intent: 'services' }
+    ]
+  },
+  service_growth: {
+    message:
+      'Growth & GTM: lifecycle marketing, RevOps consulting, conversion experimentation, and analytics instrumentation for always-on optimization.',
+    options: [
+      { label: 'AI Accelerators', intent: 'service_ai' },
+      { label: 'Talk to revenue lead', intent: 'contact' },
+      { label: 'Restart conversation', intent: 'initial' }
+    ]
+  },
+  service_ai: {
+    message:
+      'AI Acceleration: discovery workshops, data readiness assessments, prototype build-outs, and production deployments with governance baked in.',
+    options: [
+      { label: 'Schedule workshop', intent: 'contact' },
+      { label: 'Back to services', intent: 'services' },
+      { label: 'Start over', intent: 'initial' }
+    ],
+    toast: 'AI playbook ready — let us know if you want a live walkthrough.'
+  },
+  contact: {
+    message:
+      'Amazing! Drop a note to hello@accel-digital.com or share a preferred time and channel. We respond within one business day.',
+    options: [
+      { label: 'Share availability', intent: 'contact_schedule' },
+      { label: 'Email us', intent: 'contact_email' },
+      { label: 'Return home', intent: 'initial' }
+    ],
+    toast: 'We will follow up as soon as you confirm the details.'
+  },
+  contact_schedule: {
+    message:
+      'Pick a 30-minute slot and we will send a calendar invite with an agenda tailored to your priorities.',
+    options: [
+      { label: 'Send calendar link', intent: 'contact_email' },
+      { label: 'Talk services again', intent: 'services' },
+      { label: 'Back to start', intent: 'initial' }
+    ]
+  },
+  contact_email: {
+    message:
+      'Perfect — email hello@accel-digital.com with your goals, timeline, and success metrics. We will reply with next steps and a tailored squad.',
+    options: [
+      { label: 'Explore services', intent: 'services' },
+      { label: 'Restart', intent: 'initial' }
+    ],
+    toast: 'Email template copied to your clipboard? If not, we can send it manually.'
   }
-}
-
-function readTasks() {
-  ensureDataFile();
-  const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (err) {
-    console.error('Failed to parse tasks.json, resetting file.', err);
-    fs.writeFileSync(DATA_FILE, '[]', 'utf-8');
-    return [];
-  }
-}
-
-function writeTasks(tasks) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(tasks, null, 2));
-}
-
-function sendJSON(res, statusCode, payload) {
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
-  });
-  res.end(JSON.stringify(payload));
-}
+};
 
 function parseBody(req) {
   return new Promise((resolve, reject) => {
@@ -52,8 +128,7 @@ function parseBody(req) {
     req.on('data', chunk => {
       data += chunk;
       if (data.length > 1e6) {
-        req.connection.destroy();
-        reject(new Error('Payload too large'));
+        req.destroy(new Error('Payload too large'));
       }
     });
     req.on('end', () => {
@@ -71,111 +146,44 @@ function parseBody(req) {
   });
 }
 
-function handleOptions(res) {
-  res.writeHead(204, {
+function sendJSON(res, statusCode, payload) {
+  res.writeHead(statusCode, {
+    'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type'
   });
-  res.end();
+  res.end(JSON.stringify(payload));
 }
 
-function filterTasks(tasks, status) {
-  if (!status || status === 'all') return tasks;
-  if (status === 'completed') {
-    return tasks.filter(task => task.status === 'completed');
-  }
-  if (status === 'pending') {
-    return tasks.filter(task => task.status === 'pending');
-  }
-  return tasks;
-}
-
-async function handleApi(req, res, urlObj) {
+function handleApi(req, res, urlObj) {
   if (req.method === 'OPTIONS') {
-    handleOptions(res);
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    });
+    res.end();
     return;
   }
 
-  const tasks = readTasks();
-
-  if (req.method === 'GET' && urlObj.pathname === '/api/tasks') {
-    const status = urlObj.searchParams.get('status');
-    const filtered = filterTasks(tasks, status);
-    sendJSON(res, 200, filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
-    return;
-  }
-
-  if (req.method === 'POST' && urlObj.pathname === '/api/tasks') {
-    try {
-      const body = await parseBody(req);
-      const title = (body.title || '').trim();
-      const description = (body.description || '').trim();
-      if (!title) {
-        sendJSON(res, 400, { message: 'Title is required.' });
-        return;
-      }
-      const timestamp = new Date().toISOString();
-      const task = {
-        id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36),
-        title,
-        description,
-        status: body.status === 'completed' ? 'completed' : 'pending',
-        createdAt: timestamp,
-        updatedAt: timestamp
-      };
-      tasks.push(task);
-      writeTasks(tasks);
-      sendJSON(res, 201, task);
-    } catch (err) {
-      sendJSON(res, 400, { message: err.message });
-    }
-    return;
-  }
-
-  const taskIdMatch = urlObj.pathname.match(/^\/api\/tasks\/(.+)$/);
-  if (taskIdMatch) {
-    const taskId = taskIdMatch[1];
-    const index = tasks.findIndex(task => task.id === taskId);
-    if (index === -1) {
-      sendJSON(res, 404, { message: 'Task not found.' });
-      return;
-    }
-
-    if (req.method === 'PUT') {
-      try {
-        const body = await parseBody(req);
-        const title = (body.title || '').trim();
-        const description = (body.description || '').trim();
-        const status = body.status === 'completed' ? 'completed' : 'pending';
-        if (!title) {
-          sendJSON(res, 400, { message: 'Title is required.' });
-          return;
-        }
-        tasks[index] = {
-          ...tasks[index],
-          title,
-          description,
-          status,
-          updatedAt: new Date().toISOString()
+  if (req.method === 'POST' && urlObj.pathname === '/api/chat') {
+    parseBody(req)
+      .then(body => {
+        const intent = typeof body.intent === 'string' && body.intent.trim() ? body.intent.trim() : 'initial';
+        const node = flows[intent] || {
+          message: 'I did not catch that. Let us jump back to the main menu.',
+          options: flows.initial.options
         };
-        writeTasks(tasks);
-        sendJSON(res, 200, tasks[index]);
-      } catch (err) {
-        sendJSON(res, 400, { message: err.message });
-      }
-      return;
-    }
-
-    if (req.method === 'DELETE') {
-      const deleted = tasks.splice(index, 1)[0];
-      writeTasks(tasks);
-      sendJSON(res, 200, deleted);
-      return;
-    }
+        sendJSON(res, 200, node);
+      })
+      .catch(err => {
+        sendJSON(res, 400, { message: err.message, options: flows.initial.options });
+      });
+    return;
   }
 
-  sendJSON(res, 404, { message: 'Route not found.' });
+  sendJSON(res, 404, { message: 'Route not found', options: flows.initial.options });
 }
 
 function serveStaticFile(res, filePath) {
@@ -216,7 +224,6 @@ const server = http.createServer((req, res) => {
   fs.stat(filePath, (err, stats) => {
     if (err) {
       if (urlObj.pathname !== '/' && !path.extname(urlObj.pathname)) {
-        // SPA-style fallback
         serveStaticFile(res, path.join(PUBLIC_DIR, 'index.html'));
       } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -234,5 +241,6 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`Server listening on http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
+  const printableHost = HOST === '0.0.0.0' ? 'localhost' : HOST;
+  console.log(`Server listening on http://${printableHost}:${PORT}`);
 });

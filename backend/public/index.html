@@ -1,81 +1,72 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TaskFlow | To-Do Manager</title>
-  <link rel="stylesheet" href="/styles.css" />
-</head>
-<body>
-  <div class="app-shell">
-    <header>
-      <h1>TaskFlow</h1>
-      <p>Stay on track with a lightweight, local-first to-do list.</p>
-    </header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Accel Digital | Conversational Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <p class="eyebrow">Accel Digital</p>
+            <h1>Conversation-first experience design</h1>
+          </div>
+        </div>
+        <nav>
+          <a href="#chat" class="nav-link">Solutions</a>
+          <a href="#chat" class="nav-link">Insights</a>
+          <a href="#chat" class="nav-link">Contact</a>
+        </nav>
+      </header>
 
-    <section class="task-form-card">
-      <form id="task-form">
-        <input type="hidden" id="task-id" />
-        <div class="form-row">
-          <label for="title">Title</label>
-          <input type="text" id="title" name="title" placeholder="e.g., Plan sprint demo" required />
-        </div>
-        <div class="form-row">
-          <label for="description">Description</label>
-          <textarea id="description" name="description" rows="3" placeholder="Add helpful context"></textarea>
-        </div>
-        <div class="form-row status-row">
-          <label for="status">Status</label>
-          <select id="status" name="status">
-            <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
-        <div class="form-actions">
-          <button type="submit" id="submit-btn">Add Task</button>
-          <button type="button" id="cancel-edit" class="ghost" hidden>Cancel</button>
-        </div>
-      </form>
-    </section>
+      <main class="chat-experience" id="chat">
+        <section class="intro-panel">
+          <p class="tag">Human + AI</p>
+          <h2>Start a curated conversation to learn what Accel Digital can build for you.</h2>
+          <p>
+            Tap a path below and the assistant will guide you through services, case studies, and
+            next steps—no typing required.
+          </p>
+          <div class="primary-cta">
+            <button class="pill" data-intent="get_started">Get Started</button>
+            <button class="pill ghost" data-intent="services">Explore Services</button>
+          </div>
+        </section>
 
-    <section class="filters">
-      <div class="filter-buttons" role="tablist">
-        <button class="filter-btn active" data-filter="all">All</button>
-        <button class="filter-btn" data-filter="pending">Pending</button>
-        <button class="filter-btn" data-filter="completed">Completed</button>
-      </div>
-      <div class="task-stats">
-        <span id="total-count">0</span> tasks ·
-        <span id="completed-count">0</span> done
-      </div>
-    </section>
+        <section class="chat-panel" aria-live="polite">
+          <div class="chat-window" id="chat-window">
+            <ul class="chat-messages" id="chat-messages"></ul>
+          </div>
+          <div class="actions-shelf">
+            <p class="shelf-label">Choose an option</p>
+            <div class="button-grid" id="button-grid"></div>
+            <button class="pill minimal" id="reset-chat">Restart Conversation</button>
+          </div>
+        </section>
+      </main>
 
-    <section>
-      <ul id="task-list" class="task-list" aria-live="polite"></ul>
-      <div id="empty-state" class="empty-state">No tasks yet. Start by adding a goal above.</div>
-    </section>
-  </div>
-
-  <template id="task-template">
-    <li class="task-item">
-      <div class="task-main">
-        <div>
-          <p class="task-title"></p>
-          <p class="task-desc"></p>
+      <footer class="site-footer">
+        <p>© <span id="year"></span> Accel Digital. Purpose-built experiences across strategy, product, and growth.</p>
+        <div class="footer-links">
+          <a href="#chat">Privacy</a>
+          <a href="#chat">Terms</a>
+          <a href="#chat">LinkedIn</a>
         </div>
-        <div class="task-meta">
-          <span class="status-pill"></span>
-          <span class="task-date"></span>
-        </div>
-      </div>
-      <div class="task-actions">
-        <button class="complete-btn" title="Toggle status"></button>
-        <button class="edit-btn">Edit</button>
-        <button class="delete-btn">Delete</button>
-      </div>
-    </li>
-  </template>
+      </footer>
+    </div>
 
-  <script src="/app.js" type="module"></script>
-</body>
+    <div id="toast-container" aria-live="assertive" aria-atomic="true"></div>
+
+    <script src="/app.js" type="module"></script>
+  </body>
 </html>

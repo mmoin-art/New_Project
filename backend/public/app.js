@@ -1,189 +1,109 @@
-const API_BASE = '/api/tasks';
+const chatMessages = document.getElementById('chat-messages');
+const buttonGrid = document.getElementById('button-grid');
+const resetButton = document.getElementById('reset-chat');
+const toastContainer = document.getElementById('toast-container');
+const primaryButtons = document.querySelectorAll('button[data-intent]');
+const yearSpan = document.getElementById('year');
 
-const state = {
-  tasks: [],
-  filter: 'all',
-  editingId: null
-};
+const FALLBACK_OPTIONS = [
+  { label: 'Get Started', intent: 'get_started' },
+  { label: 'Learn More', intent: 'learn_more' },
+  { label: 'Services', intent: 'services' },
+  { label: 'Contact Us', intent: 'contact' }
+];
 
-const form = document.getElementById('task-form');
-const titleInput = document.getElementById('title');
-const descInput = document.getElementById('description');
-const statusInput = document.getElementById('status');
-const idInput = document.getElementById('task-id');
-const submitBtn = document.getElementById('submit-btn');
-const cancelBtn = document.getElementById('cancel-edit');
-const filterButtons = document.querySelectorAll('.filter-btn');
-const taskList = document.getElementById('task-list');
-const taskTemplate = document.getElementById('task-template');
-const emptyState = document.getElementById('empty-state');
-const totalCount = document.getElementById('total-count');
-const completedCount = document.getElementById('completed-count');
+const API_ENDPOINT = '/api/chat';
 
-async function fetchTasks() {
-  try {
-    const res = await fetch(API_BASE);
-    if (!res.ok) throw new Error('Unable to load tasks');
-    state.tasks = await res.json();
-    renderTasks();
-  } catch (err) {
-    console.error(err);
-    alert('Failed to fetch tasks. Is the server running?');
-  }
+function addMessage(text, sender = 'bot') {
+  const li = document.createElement('li');
+  li.className = `message ${sender}`;
+  li.innerHTML = `
+    <span>${text}</span>
+    <span class="timestamp">${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+  `;
+  chatMessages.appendChild(li);
+  chatMessages.parentElement.scrollTo({ top: chatMessages.parentElement.scrollHeight, behavior: 'smooth' });
 }
 
-function renderTasks() {
-  const visibleTasks = state.filter === 'all' ? state.tasks : state.tasks.filter(task => task.status === state.filter);
-
-  taskList.innerHTML = '';
-  if (!visibleTasks.length) {
-    emptyState.style.display = 'block';
-    emptyState.textContent = state.tasks.length
-      ? 'No tasks match this filter.'
-      : 'No tasks yet. Start by adding a goal above.';
-  } else {
-    emptyState.style.display = 'none';
-  }
-
-  totalCount.textContent = state.tasks.length;
-  completedCount.textContent = state.tasks.filter(task => task.status === 'completed').length;
-
-  visibleTasks.forEach(task => {
-    const clone = taskTemplate.content.cloneNode(true);
-    const item = clone.querySelector('.task-item');
-    clone.querySelector('.task-title').textContent = task.title;
-    clone.querySelector('.task-desc').textContent = task.description || 'No description provided';
-    clone.querySelector('.task-date').textContent = formatDate(task.createdAt);
-    const statusPill = clone.querySelector('.status-pill');
-    statusPill.textContent = task.status;
-    statusPill.classList.add(task.status);
-
-    const completeBtn = clone.querySelector('.complete-btn');
-    completeBtn.textContent = task.status === 'completed' ? 'Mark Pending' : 'Mark Done';
-    completeBtn.addEventListener('click', () => toggleStatus(task));
-
-    clone.querySelector('.edit-btn').addEventListener('click', () => startEdit(task));
-    clone.querySelector('.delete-btn').addEventListener('click', () => deleteTask(task));
-
-    taskList.appendChild(clone);
+function setButtons(options = []) {
+  buttonGrid.innerHTML = '';
+  const opts = Array.isArray(options) && options.length ? options : FALLBACK_OPTIONS;
+  opts.forEach(option => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.textContent = option.label;
+    btn.dataset.intent = option.intent || 'initial';
+    if (option.description) {
+      btn.title = option.description;
+      btn.setAttribute('aria-label', `${option.label}. ${option.description}`);
+    }
+    btn.addEventListener('click', () => handleIntent(btn.dataset.intent, option.label));
+    buttonGrid.appendChild(btn);
   });
 }
 
-function formatDate(dateStr) {
-  const date = new Date(dateStr);
-  if (Number.isNaN(date.getTime())) return 'Unknown date';
-  return date.toLocaleString(undefined, {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  });
-}
-
-form.addEventListener('submit', async event => {
-  event.preventDefault();
-  const payload = {
-    title: titleInput.value.trim(),
-    description: descInput.value.trim(),
-    status: statusInput.value
-  };
-
-  if (!payload.title) {
-    alert('Title is required.');
-    titleInput.focus();
-    return;
-  }
-
+async function requestResponse(intent = 'initial') {
   try {
-    const isEditing = Boolean(state.editingId);
-    const endpoint = isEditing ? `${API_BASE}/${state.editingId}` : API_BASE;
-    const method = isEditing ? 'PUT' : 'POST';
-
-    const res = await fetch(endpoint, {
-      method,
+    const res = await fetch(API_ENDPOINT, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({ intent })
     });
 
     if (!res.ok) {
-      const message = await res.json().catch(() => ({ message: 'Unable to save task' }));
-      throw new Error(message.message || 'Unable to save task');
+      throw new Error('Assistant is unavailable. Please try again.');
     }
 
-    await fetchTasks();
-    form.reset();
-    statusInput.value = 'pending';
-    exitEditState();
+    const data = await res.json();
+    if (!data.message) {
+      throw new Error('Empty response received.');
+    }
+    addMessage(data.message, 'bot');
+    setButtons(data.options);
+    if (data.toast) {
+      showToast(data.toast);
+    }
   } catch (err) {
-    console.error(err);
-    alert(err.message);
-  }
-});
-
-cancelBtn.addEventListener('click', () => {
-  form.reset();
-  statusInput.value = 'pending';
-  exitEditState();
-});
-
-filterButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    state.filter = button.dataset.filter;
-    filterButtons.forEach(btn => btn.classList.toggle('active', btn === button));
-    renderTasks();
-  });
-});
-
-function startEdit(task) {
-  state.editingId = task.id;
-  idInput.value = task.id;
-  titleInput.value = task.title;
-  descInput.value = task.description || '';
-  statusInput.value = task.status;
-  submitBtn.textContent = 'Update Task';
-  cancelBtn.hidden = false;
-  form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function exitEditState() {
-  state.editingId = null;
-  idInput.value = '';
-  submitBtn.textContent = 'Add Task';
-  cancelBtn.hidden = true;
-}
-
-async function toggleStatus(task) {
-  const nextStatus = task.status === 'completed' ? 'pending' : 'completed';
-  try {
-    const res = await fetch(`${API_BASE}/${task.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: task.title,
-        description: task.description,
-        status: nextStatus
-      })
-    });
-    if (!res.ok) throw new Error('Unable to update task');
-    await fetchTasks();
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
+    addMessage(err.message || 'Something went wrong. Restarting to keep things smooth.', 'bot');
+    setButtons();
+    showToast('We reset the flow so you can keep going.');
   }
 }
 
-async function deleteTask(task) {
-  const confirmed = confirm(`Delete "${task.title}"?`);
-  if (!confirmed) return;
-  try {
-    const res = await fetch(`${API_BASE}/${task.id}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Unable to delete task');
-    await fetchTasks();
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
+function handleIntent(intent, label = '') {
+  if (!intent) {
+    showToast('Pick one of the highlighted actions to continue.');
+    return;
   }
+  if (label) {
+    addMessage(label, 'user');
+  }
+  requestResponse(intent);
 }
 
-fetchTasks();
+function showToast(text) {
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = text;
+  toastContainer.appendChild(toast);
+  setTimeout(() => {
+    toast.remove();
+  }, 4000);
+}
+
+function restartConversation() {
+  chatMessages.innerHTML = '';
+  addMessage('Conversation restarted. Let us begin again.', 'bot');
+  requestResponse('initial');
+}
+
+primaryButtons.forEach(btn => {
+  btn.addEventListener('click', () => handleIntent(btn.dataset.intent, btn.textContent.trim()));
+});
+
+resetButton.addEventListener('click', restartConversation);
+
+yearSpan.textContent = new Date().getFullYear();
+
+addMessage('Loading assistant...', 'bot');
+requestResponse('initial');

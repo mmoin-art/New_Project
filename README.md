@@ -1,62 +1,52 @@
-# TaskFlow To-Do App
+# Accel Digital Chat Experience
 
-A lightweight full-stack to-do list built with a zero-dependency Node.js backend and a vanilla JavaScript frontend. It provides full CRUD operations, filtering, status toggles, and persists data locally on disk.
+A modern, zero-dependency web chatbot that mirrors the look-and-feel of [Accel Digital](https://www.accel-digital.com/). Users move through curated conversation flows entirely with buttons, making it ideal for kiosks, marketing pages, or demo environments.
 
 ## Features
-- Create, read, update, and delete tasks with title, description, status, and creation timestamp
-- Mark tasks as completed or pending with a single click
-- Filter views (All / Pending / Completed) plus live stats
-- Responsive UI with smooth form reuse for editing
-- Local JSON persistence (`backend/data/tasks.json`) so your tasks survive restarts
-- Single-port setup: backend serves both API routes and the frontend
+- Fully responsive layout with header/footer, chat panel, and CTA hero section inspired by Accel Digital branding.
+- Message bubbles with clear bot/user alignment and contextual timestamps.
+- Dynamic button shelf that updates after each selection—no typing required.
+- Toast notifications and inline confirmations for key milestones.
+- Node.js server that serves the frontend and powers `/api/chat`, returning `{ message, options, toast? }` payloads so flows never break.
+- Graceful fallback handling on both client and server to keep the experience running even with invalid inputs.
 
 ## Project structure
 ```
 /Users/mmoin/Desktop/New Project
 ├── backend
-│   ├── data/tasks.json        # Local persistence file
-│   ├── package.json           # Scripts, metadata
-│   ├── public/                # Frontend assets (HTML/CSS/JS)
-│   └── server.js              # HTTP server + REST API
-├── .gitignore
+│   ├── package.json
+│   ├── public/
+│   │   ├── app.js
+│   │   ├── index.html
+│   │   └── styles.css
+│   └── server.js
+├── render.yaml
 └── README.md
 ```
 
 ## Prerequisites
-- Node.js 18+ (built-in `fetch`, `crypto.randomUUID`, and ES2021 features are used)
+- Node.js 18+
 
 ## Running locally
-1. Open a terminal at the project root.
-2. Start the server (defaults to `http://localhost:4000`):
-   ```bash
-   cd backend
-   npm start
-   ```
-   or simply `node server.js`.
-3. Visit `http://localhost:4000` in your browser. The frontend loads from the same port and all API calls go to `/api/tasks`.
+```bash
+cd backend
+npm install   # no dependencies, but keeps the flow consistent
+npm start
+```
+Visit `http://localhost:4000` to chat. All button clicks hit `/api/chat`, so the server must stay running.
 
-> **Note:** the server writes to `backend/data/tasks.json`. Keep this file if you want to preserve your tasks; delete it to reset the list.
+## Customizing flows
+- Conversation logic lives in `backend/server.js` inside the `flows` object. Each entry can include:
+  - `message`: string shown to the user.
+  - `options`: array of `{ label, intent }` to build the next button set.
+  - `toast` (optional): short confirmation shown as a toast.
+- Add new intents, update copy, or change option ordering as needed. The frontend automatically reflects the JSON the server returns.
 
 ## Deploying to Render
-1. Commit and push your changes to GitHub (already done for this repo).
-2. In the Render dashboard choose **New > Blueprint** and paste the repo URL. Render auto-detects `render.yaml` and provisions the service with the right build/start commands.
-3. Click **Apply** to create the web service. On the free tier the Blueprint sets `DATA_FILE=/tmp/tasks.json`, which is writable but reset whenever the service restarts—perfect for demos but not long-term storage.
-4. Need persistence? Upgrade the service plan and add a persistent disk in the Render UI, then point `DATA_FILE` at the mounted path (e.g., `/var/data/tasks.json`). The rest of the config stays the same.
-5. On each deploy Render installs dependencies in `backend`, runs `npm start`, and exposes the public URL shown in the dashboard. Later pushes to `main` trigger automatic redeploys.
+1. Push this repo to GitHub (already done).
+2. In Render choose **New > Blueprint** and paste the repo URL. The included `render.yaml` provisions the Node service.
+3. The Blueprint deploys a free Node web service that serves both the static assets and the `/api/chat` endpoint.
+4. Need storage or telemetry later? Upgrade the plan, add the necessary env vars/disks in the Render dashboard, and redeploy.
+5. Each push to `main` triggers an automatic redeploy.
 
-## API overview
-| Method | Endpoint        | Description |
-| ------ | --------------- | ----------- |
-| GET    | `/api/tasks`    | List all tasks (sorted by newest). Optional `?status=completed|pending|all` filter. |
-| POST   | `/api/tasks`    | Create a new task. Body: `{ title, description?, status? }`. |
-| PUT    | `/api/tasks/:id`| Update title/description/status for a task. |
-| DELETE | `/api/tasks/:id`| Remove a task. |
-
-Responses are JSON and include validation errors when fields are missing.
-
-## Customization tips
-- Change the default port by setting `PORT=5000 npm start`.
-- To start fresh, delete `backend/data/tasks.json` before launching.
-- Extend the schema by adding new fields in `server.js` and updating the frontend form in `public/index.html` + `public/app.js`.
-
-Enjoy managing your tasks!
+Enjoy the conversation-first experience!

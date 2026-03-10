@@ -1,0 +1,6 @@
+node_modules
+*.log
+backend/data/*.db
+backend/data/*.sqlite
+backend/data/tasks.json.backup
+.DS_Store

@@ -11,8 +11,4 @@ services:
       - key: NODE_VERSION
         value: '18'
       - key: DATA_FILE
-        value: /data/tasks.json
-    disk:
-      name: taskflow-data
-      mountPath: /data
-      sizeGB: 1
+        value: /tmp/tasks.json

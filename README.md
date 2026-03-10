@@ -40,8 +40,9 @@ A lightweight full-stack to-do list built with a zero-dependency Node.js backend
 ## Deploying to Render
 1. Commit and push your changes to GitHub (already done for this repo).
 2. In the Render dashboard choose **New > Blueprint** and paste the repo URL. Render auto-detects `render.yaml` and provisions the service with the right build/start commands.
-3. Click **Apply** to create the web service. The included persistent disk mounts at `/data`, and the `DATA_FILE` env variable points the app to `/data/tasks.json` so your tasks survive restarts.
-4. On the first deploy Render installs dependencies in `backend`, runs `npm start`, and exposes the public URL shown in the dashboard. Later pushes to `main` trigger automatic redeploys.
+3. Click **Apply** to create the web service. On the free tier the Blueprint sets `DATA_FILE=/tmp/tasks.json`, which is writable but reset whenever the service restarts—perfect for demos but not long-term storage.
+4. Need persistence? Upgrade the service plan and add a persistent disk in the Render UI, then point `DATA_FILE` at the mounted path (e.g., `/var/data/tasks.json`). The rest of the config stays the same.
+5. On each deploy Render installs dependencies in `backend`, runs `npm start`, and exposes the public URL shown in the dashboard. Later pushes to `main` trigger automatic redeploys.
 
 ## API overview
 | Method | Endpoint        | Description |

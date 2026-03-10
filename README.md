@@ -53,3 +53,6 @@ Responses are JSON and include validation errors when fields are missing.
 - Extend the schema by adding new fields in `server.js` and updating the frontend form in `public/index.html` + `public/app.js`.
 
 Enjoy managing your tasks!
+=======
+# New_Project
+>>>>>>> d9e135b5f49bd71cfd7f797eb662cf21086415f4
